@@ -8,9 +8,37 @@ if (!process.argv[2]) {
   process.exit(1);
 }
 
-const original = fs.readFileSync(path.resolve(process.argv[2]));
-const compressed = gzipSync(original, { level: 9 });
-assert.deepEqual(gunzipSync(compressed), original);
+const original = fs.readFileSync(path.resolve(process.argv[2]), 'utf8');
+const papers = [
+  ['真题（合并重排）', 'past-papers', '真题_合并重排'],
+  ['模拟题 A', 'mock-a', '模拟题_A'],
+  ['模拟题 B', 'mock-b', '模拟题_B'],
+];
+const rows = papers.map(([label, slug, filename]) => {
+  const links = [['questions', '题目'], ['solutions', '解析']].map(([kind, name]) => {
+    const file = `${slug}-${kind}.pdf`;
+    const pdf = fs.readFileSync(path.join(__dirname, 'comporg', 'downloads', file));
+    assert.equal(pdf.subarray(0, 5).toString(), '%PDF-', `Invalid PDF: ${file}`);
+    return `<td><a href="./downloads/${file}" download="${filename}_${name}.pdf" aria-label="下载${label}${name} PDF">下载${name} PDF</a></td>`;
+  });
+  return `<tr><th scope="row">${label}</th>${links.join('')}</tr>`;
+}).join('\n');
+const downloads = `<section class="chapter" id="downloads" data-num="" data-title="资料下载">
+  <header class="chap-head">
+    <div class="chap-kicker">配套资料 · PDF</div>
+    <h1 class="chap-title">资料下载</h1>
+    <p class="chap-lead">下载题目离线练习，完成后再查看解析。</p>
+  </header>
+  <table class="tight">
+    <thead><tr><th scope="col">资料</th><th scope="col">题目</th><th scope="col">解析</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</section>`;
+const endOfPage = /\r?\n<\/div>\s*<script>/g;
+assert.equal([...original.matchAll(endOfPage)].length, 1, 'Expected one final page wrapper');
+const course = Buffer.from(original.replace(endOfPage, match => `\n${downloads}\n${match}`));
+const compressed = gzipSync(course, { level: 9 });
+assert.deepEqual(gunzipSync(compressed), course);
 
 // Compression and encoding keep the original out of the published HTML;
 // they do not provide encryption or prevent recovery by visitors.
@@ -45,4 +73,4 @@ const html = `<!doctype html>
 
 fs.mkdirSync(path.join(__dirname, 'comporg'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'comporg', 'index.html'), html);
-console.log(`Built comporg/index.html: ${original.length} → ${Buffer.byteLength(html)} bytes; round-trip verified.`);
+console.log(`Built comporg/index.html: ${course.length} → ${Buffer.byteLength(html)} bytes; round-trip and six PDF files verified.`);

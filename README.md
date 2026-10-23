@@ -15,6 +15,8 @@ git commit -m "Update computer organization course"
 git push
 ```
 
-每次构建都会校验解压后与原文件逐字节一致。只提交发布文件，不要把原始 HTML 放入 Git 历史。GitHub Pages 使用 `main` 分支根目录发布。
+构建时会在讲义末尾添加资料下载区，并校验压缩前后逐字节一致及六份 PDF 文件有效。只提交发布文件，不要把原始 HTML 放入 Git 历史。GitHub Pages 使用 `main` 分支根目录发布。
+
+配套 PDF 保存在 `comporg/downloads/`，包括真题、模拟题 A 和模拟题 B 各自的题目与解析。点击网页末尾的链接即可下载，保存时使用原中文文件名。
 
 页面使用浏览器原生 `DecompressionStream`，需要现代浏览器。学习勾选进度保存在当前浏览器本机，不跨设备同步。
